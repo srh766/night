@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05060c">
+  <meta name="color-scheme" content="dark">
+  <title>藏在夜色里的信</title>
+  <style>
+    :root {
+      --night: #05060c;
+      --night-soft: #090b15;
+      --warm: #f7e6b4;
+      --warm-bright: #fff4d2;
+      --moon: #c8d9ff;
+      --muted: rgba(238, 240, 255, 0.52);
+      --safe-top: max(20px, env(safe-area-inset-top));
+      --safe-right: max(20px, env(safe-area-inset-right));
+      --safe-bottom: max(20px, env(safe-area-inset-bottom));
+      --safe-left: max(20px, env(safe-area-inset-left));
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--night);
+    }
+
+    body {
+      color: #fff;
+      font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      isolation: isolate;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      background:
+        radial-gradient(circle at 50% 112%, rgba(21, 27, 48, 0.42), transparent 42%),
+        linear-gradient(180deg, #04050a 0%, var(--night) 52%, #070914 100%);
+    }
+
+    #sky {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .beam {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      width: clamp(190px, 29vw, 420px);
+      aspect-ratio: 1;
+      margin-left: calc(clamp(190px, 29vw, 420px) / -2);
+      margin-top: calc(clamp(190px, 29vw, 420px) / -2);
+      pointer-events: none;
+      border-radius: 50%;
+      opacity: 0;
+      background:
+        radial-gradient(circle,
+          rgba(255, 248, 221, 0.15) 0%,
+          rgba(255, 239, 193, 0.095) 17%,
+          rgba(212, 224, 255, 0.048) 43%,
+          rgba(118, 139, 190, 0.016) 65%,
+          transparent 74%);
+      filter: blur(2px);
+      mix-blend-mode: screen;
+      will-change: transform;
+      transition: opacity 900ms ease;
+    }
+
+    .beam::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 247, 220, 0.9);
+      box-shadow:
+        0 0 12px 4px rgba(255, 239, 186, 0.3),
+        0 0 34px 9px rgba(177, 199, 255, 0.09);
+      opacity: 0.72;
+      animation: lamp-breathe 3.8s ease-in-out infinite;
+    }
+
+    .field {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .fragment {
+      position: absolute;
+      max-width: min(31rem, 44vw);
+      margin: 0;
+      opacity: 0;
+      color: rgba(244, 247, 255, 0.96);
+      font-size: clamp(1.08rem, 1.72vw, 1.56rem);
+      font-weight: 400;
+      line-height: 1.78;
+      text-wrap: balance;
+      text-shadow:
+        0 0 12px rgba(255, 245, 213, 0.13),
+        0 0 38px rgba(146, 170, 225, 0.08);
+      will-change: opacity, filter;
+    }
+
+    .fragment[data-align="left"] {
+      text-align: left;
+      transform: translateY(-50%);
+    }
+
+    .fragment[data-align="right"] {
+      text-align: right;
+      transform: translate(-100%, -50%);
+    }
+
+    .fragment[data-align="center"] {
+      text-align: center;
+      transform: translate(-50%, -50%);
+    }
+
+    .char {
+      display: inline-block;
+      min-width: 0.02em;
+      color: rgba(230, 235, 250, 0.58);
+      text-shadow: none;
+      transition:
+        color 170ms ease,
+        text-shadow 260ms ease,
+        opacity 170ms ease;
+    }
+
+    .char.lit {
+      color: var(--warm-bright);
+      text-shadow:
+        0 0 7px rgba(255, 241, 197, 0.34),
+        0 0 22px rgba(203, 216, 255, 0.16);
+    }
+
+    .char.comet {
+      animation: char-arrive 520ms ease both;
+    }
+
+    .hud {
+      position: fixed;
+      z-index: 4;
+      right: 0;
+      bottom: var(--safe-bottom);
+      left: 0;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 900ms ease;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      filter: drop-shadow(0 0 8px rgba(173, 198, 255, 0.12));
+    }
+
+    .progress li {
+      width: 6px;
+      height: 6px;
+      border: 1px solid rgba(203, 216, 255, 0.23);
+      transform: rotate(45deg);
+      background: rgba(8, 10, 21, 0.7);
+      transition:
+        background 600ms ease,
+        border-color 600ms ease,
+        box-shadow 700ms ease,
+        transform 600ms ease;
+    }
+
+    .progress li.lit {
+      border-color: rgba(255, 236, 174, 0.88);
+      background: var(--warm-bright);
+      box-shadow:
+        0 0 8px rgba(255, 235, 170, 0.52),
+        0 0 18px rgba(177, 201, 255, 0.24);
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at center, transparent 42%, rgba(2, 3, 8, 0.34) 76%, rgba(2, 3, 8, 0.72) 112%),
+        linear-gradient(180deg, rgba(1, 2, 7, 0.24), transparent 22%, transparent 78%, rgba(1, 2, 7, 0.4));
+    }
+
+    .opening {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding:
+        calc(var(--safe-top) + 24px)
+        calc(var(--safe-right) + 24px)
+        calc(var(--safe-bottom) + 24px)
+        calc(var(--safe-left) + 24px);
+      background:
+        radial-gradient(circle at 50% 58%, rgba(43, 53, 85, 0.18), transparent 33%),
+        rgba(4, 5, 11, 0.91);
+      backdrop-filter: blur(12px);
+      transition:
+        opacity 1100ms ease,
+        visibility 1100ms ease,
+        backdrop-filter 1100ms ease;
+    }
+
+    .opening.leave {
+      visibility: hidden;
+      opacity: 0;
+      backdrop-filter: blur(0);
+    }
+
+    .opening-inner {
+      width: min(100%, 38rem);
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 1.35rem;
+      color: rgba(201, 215, 249, 0.58);
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: #fff7dc;
+      font-size: clamp(2rem, 5.4vw, 4rem);
+      font-weight: 400;
+      line-height: 1.28;
+      text-shadow:
+        0 0 18px rgba(255, 241, 197, 0.14),
+        0 0 65px rgba(156, 182, 255, 0.11);
+    }
+
+    .opening-copy {
+      max-width: 26rem;
+      margin: 1.55rem auto 0;
+      color: rgba(235, 239, 251, 0.66);
+      font-size: clamp(0.95rem, 1.5vw, 1.08rem);
+      line-height: 1.9;
+    }
+
+    .enter {
+      position: relative;
+      margin-top: 2.6rem;
+      padding: 0.68rem 0.42rem;
+      border: 0;
+      border-bottom: 1px solid rgba(247, 230, 180, 0.38);
+      color: rgba(255, 245, 216, 0.92);
+      background: transparent;
+      cursor: pointer;
+      transition:
+        color 250ms ease,
+        border-color 250ms ease,
+        text-shadow 250ms ease;
+    }
+
+    .enter::after {
+      content: "";
+      position: absolute;
+      right: 0.42rem;
+      bottom: -1px;
+      left: 0.42rem;
+      height: 1px;
+      background: var(--warm-bright);
+      box-shadow: 0 0 10px rgba(255, 236, 178, 0.58);
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 320ms ease;
+    }
+
+    .enter:hover,
+    .enter:focus-visible {
+      color: #fff;
+      border-color: rgba(255, 245, 216, 0.74);
+      text-shadow: 0 0 14px rgba(255, 239, 188, 0.24);
+      outline: none;
+    }
+
+    .enter:hover::after,
+    .enter:focus-visible::after {
+      transform: scaleX(1);
+    }
+
+    .finale {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      visibility: hidden;
+      display: grid;
+      place-items: center;
+      padding:
+        calc(var(--safe-top) + 22px)
+        calc(var(--safe-right) + 22px)
+        calc(var(--safe-bottom) + 22px)
+        calc(var(--safe-left) + 22px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1300ms ease, visibility 1300ms ease;
+    }
+
+    .finale.visible {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .finale-inner {
+      position: relative;
+      width: min(100%, 42rem);
+      min-height: 22rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .finale-prompt {
+      margin: 1.5rem 0 0;
+      color: rgba(224, 231, 250, 0.66);
+      font-size: clamp(0.92rem, 1.4vw, 1.04rem);
+      line-height: 1.8;
+      transition: opacity 500ms ease;
+    }
+
+    .star-button {
+      position: relative;
+      width: 78px;
+      height: 78px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      filter: drop-shadow(0 0 12px rgba(255, 235, 169, 0.32));
+      animation: star-breathe 2.8s ease-in-out infinite;
+      transition: transform 350ms ease, filter 350ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .star-button::before,
+    .star-button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(213, 225, 255, 0.2);
+      border-radius: 50%;
+      transform: scale(0.74);
+      animation: star-ring 2.8s ease-out infinite;
+    }
+
+    .star-button::after {
+      animation-delay: 1.4s;
+    }
+
+    .star-shape {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 34px;
+      height: 34px;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle at 50% 48%, #fffdf1 0 8%, #ffe9a6 17%, rgba(255, 225, 137, 0.72) 32%, transparent 68%);
+      clip-path: polygon(
+        50% 0%,
+        60% 38%,
+        100% 50%,
+        60% 62%,
+        50% 100%,
+        40% 62%,
+        0% 50%,
+        40% 38%
+      );
+    }
+
+    .star-button:hover,
+    .star-button:focus-visible {
+      transform: scale(1.12);
+      filter:
+        drop-shadow(0 0 18px rgba(255, 237, 173, 0.54))
+        drop-shadow(0 0 40px rgba(166, 193, 255, 0.2));
+      outline: none;
+    }
+
+    .finale.reveal-started .star-button {
+      pointer-events: none;
+      transform: scale(2.7);
+      filter: drop-shadow(0 0 50px rgba(255, 236, 174, 0.78));
+      opacity: 0;
+      transition: transform 1300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 1100ms ease 350ms;
+    }
+
+    .finale.reveal-started .finale-prompt {
+      opacity: 0;
+    }
+
+    .answer {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 1200ms ease 250ms, visibility 1200ms ease 250ms;
+    }
+
+    .finale.revealed .answer {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .answer-inner {
+      width: min(100%, 36rem);
+      padding: 0 0.5rem;
+    }
+
+    .answer p {
+      margin: 0.45rem 0;
+      color: #fff5d7;
+      font-size: clamp(1.42rem, 3.2vw, 2.35rem);
+      line-height: 1.75;
+      text-wrap: balance;
+      text-shadow:
+        0 0 16px rgba(255, 240, 196, 0.16),
+        0 0 60px rgba(166, 191, 248, 0.1);
+    }
+
+    .answer .signature {
+      margin-top: 2rem;
+      color: rgba(217, 226, 248, 0.52);
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 0.76rem;
+      line-height: 1.8;
+      text-shadow: none;
+      letter-spacing: 0;
+    }
+
+    .replay {
+      position: absolute;
+      bottom: 0;
+      padding: 0.5rem 0.3rem;
+      border: 0;
+      border-bottom: 1px solid rgba(205, 219, 250, 0.2);
+      color: rgba(217, 226, 248, 0.54);
+      background: transparent;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity 700ms ease,
+        color 240ms ease,
+        border-color 240ms ease;
+    }
+
+    .finale.revealed .replay {
+      opacity: 1;
+      pointer-events: auto;
+      transition-delay: 1500ms;
+    }
+
+    .replay:hover,
+    .replay:focus-visible {
+      color: rgba(255, 245, 216, 0.9);
+      border-color: rgba(255, 239, 187, 0.6);
+      outline: none;
+    }
+
+    .finale-open .field {
+      opacity: 0.18;
+      transition: opacity 1.4s ease;
+    }
+
+    .finale-open .hud {
+      opacity: 0.24;
+    }
+
+    .started .beam,
+    .started .hud {
+      opacity: 1;
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    @keyframes lamp-breathe {
+      0%,
+      100% {
+        opacity: 0.58;
+        transform: translate(-50%, -50%) scale(0.86);
+      }
+      50% {
+        opacity: 0.94;
+        transform: translate(-50%, -50%) scale(1.14);
+      }
+    }
+
+    @keyframes char-arrive {
+      0% {
+        filter: brightness(2.2);
+        transform: translateY(2px) scale(1.08);
+      }
+      100% {
+        filter: brightness(1);
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes star-breathe {
+      0%,
+      100% {
+        transform: scale(0.96);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes star-ring {
+      0% {
+        opacity: 0.5;
+        transform: scale(0.58);
+      }
+      70%,
+      100% {
+        opacity: 0;
+        transform: scale(1.22);
+      }
+    }
+
+    @media (max-width: 719px) {
+      .fragment {
+        max-width: 47vw;
+        font-size: clamp(0.96rem, 4.15vw, 1.2rem);
+        line-height: 1.72;
+      }
+
+      .hud {
+        top: calc(var(--safe-top) + 4px);
+        bottom: auto;
+      }
+
+      .progress {
+        gap: 7px;
+      }
+
+      .progress li {
+        width: 5px;
+        height: 5px;
+      }
+
+      .opening-copy {
+        max-width: 20rem;
+      }
+
+      .finale-inner {
+        min-height: 19rem;
+      }
+
+      .answer p {
+        font-size: clamp(1.25rem, 6vw, 1.75rem);
+      }
+    }
+
+    @media (max-height: 580px) {
+      .fragment {
+        max-width: 34vw;
+        font-size: clamp(0.9rem, 2.45vw, 1.1rem);
+      }
+
+      .opening-copy {
+        margin-top: 1rem;
+      }
+
+      .enter {
+        margin-top: 1.7rem;
+      }
+
+      .finale-inner {
+        min-height: 15rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app" aria-label="藏在夜色里的信">
+    <canvas id="sky" aria-hidden="true"></canvas>
+    <div class="beam" id="beam" aria-hidden="true"></div>
+    <div class="field" id="field" aria-hidden="true"></div>
+
+    <div class="hud" aria-hidden="true">
+      <ol class="progress" id="progress"></ol>
+    </div>
+
+    <div class="vignette" aria-hidden="true"></div>
+
+    <section class="opening" id="opening">
+      <div class="opening-inner">
+        <p class="eyebrow">一封要在夜里寻找的信</p>
+        <h1>藏在夜色里的信</h1>
+        <p class="opening-copy">把光慢慢移过夜色，句子会自己醒来。</p>
+        <button class="enter" id="enter" type="button">让灯亮起来</button>
+      </div>
+    </section>
+
+    <section class="finale" id="finale" aria-hidden="true">
+      <div class="finale-inner">
+        <button class="star-button" id="reveal-star" type="button" aria-label="点亮最后一颗星">
+          <span class="star-shape" aria-hidden="true"></span>
+        </button>
+        <p class="finale-prompt">所有句子都亮了。还有一颗星，等你。</p>
+
+        <div class="answer" id="answer" aria-live="polite">
+          <div class="answer-inner">
+            <div id="answer-copy"></div>
+            <p class="signature" id="signature"></p>
+          </div>
+        </div>
+
+        <button class="replay" id="replay" type="button">再走一遍</button>
+      </div>
+    </section>
+
+    <p class="sr-only" id="status" aria-live="polite"></p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+       * 内容配置
+       * text 可以改成任何想说的话。x、y 是文字在画面中的百分比位置。
+       * align 可选 left、right、center。手机端会自动使用更整齐的布局。
+       */
+      const LETTER = {
+        signature: "晚安。",
+        fragments: [
+          { text: "如果今晚很安静，", x: 17, y: 17, align: "left" },
+          { text: "就把光放慢一点。", x: 83, y: 20, align: "right" },
+          { text: "我有些话，", x: 83, y: 40, align: "right" },
+          { text: "没有写在消息里。", x: 17, y: 43, align: "left" },
+          { text: "它们躲在夜色背后，", x: 17, y: 63, align: "left" },
+          { text: "等你一盏一盏地找到。", x: 83, y: 66, align: "right" },
+          { text: "你不必急着回应，", x: 50, y: 32, align: "center" },
+          { text: "只要让它们被看见。", x: 50, y: 56, align: "center" },
+          { text: "哪怕只有这一小会儿，", x: 17, y: 85, align: "left" },
+          { text: "也想让你知道，有人在想你。", x: 83, y: 87, align: "right" }
+        ],
+        endings: [
+          ["如果你此刻轻轻笑了一下，", "这封信就已经抵达。"],
+          ["今晚不用成为更好的人，", "只要平安地在这里。"],
+          ["我没有别的话了。", "只是想让你被温柔地想起。"],
+          ["夜很深，但你不是一个人。", "至少此刻，光记得你。"],
+          ["如果还有一点点难过，", "就把它留在这里。天快亮了。"],
+          ["谢谢你替我把这些话，", "一盏一盏地亮起来。"]
+        ]
+      };
+
+      const app = document.getElementById("app");
+      const canvas = document.getElementById("sky");
+      const ctx = canvas.getContext("2d", { alpha: true });
+      const beam = document.getElementById("beam");
+      const field = document.getElementById("field");
+      const progress = document.getElementById("progress");
+      const opening = document.getElementById("opening");
+      const enter = document.getElementById("enter");
+      const finale = document.getElementById("finale");
+      const revealStar = document.getElementById("reveal-star");
+      const answerCopy = document.getElementById("answer-copy");
+      const signature = document.getElementById("signature");
+      const replay = document.getElementById("replay");
+      const status = document.getElementById("status");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const mobileLayout = [
+        { x: 4, y: 8, align: "left" },
+        { x: 96, y: 17, align: "right" },
+        { x: 96, y: 26, align: "right" },
+        { x: 4, y: 35, align: "left" },
+        { x: 4, y: 44, align: "left" },
+        { x: 96, y: 53, align: "right" },
+        { x: 96, y: 62, align: "right" },
+        { x: 4, y: 71, align: "left" },
+        { x: 4, y: 80, align: "left" },
+        { x: 96, y: 89, align: "right" }
+      ];
+
+      const state = {
+        started: false,
+        finalOpen: false,
+        answerShown: false,
+        completeCount: 0,
+        pointer: { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 },
+        light: { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 },
+        fragments: [],
+        stars: [],
+        width: window.innerWidth,
+        height: window.innerHeight,
+        dpr: 1,
+        lastTime: performance.now(),
+        dimensionsReady: false
+      };
+
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const lerp = (from, to, amount) => from + (to - from) * amount;
+
+      function seededRandom(seed) {
+        let value = seed % 2147483647;
+        if (value <= 0) value += 2147483646;
+        return () => {
+          value = value * 16807 % 2147483647;
+          return (value - 1) / 2147483646;
+        };
+      }
+
+      function buildFragments() {
+        LETTER.fragments.forEach((item, index) => {
+          const element = document.createElement("p");
+          element.className = "fragment";
+          element.dataset.align = item.align;
+          element.style.left = `${item.x}%`;
+          element.style.top = `${item.y}%`;
+          element.setAttribute("aria-label", item.text);
+
+          const characters = [];
+          Array.from(item.text).forEach((character, characterIndex) => {
+            const span = document.createElement("span");
+            span.className = "char";
+            span.textContent = character;
+            span.style.setProperty("--char-index", characterIndex);
+            element.appendChild(span);
+            characters.push({
+              element: span,
+              threshold: 0.08 + (characterIndex / Math.max(1, item.text.length - 1)) * 0.78,
+              lit: false
+            });
+          });
+
+          field.appendChild(element);
+
+          const marker = document.createElement("li");
+          marker.setAttribute("aria-hidden", "true");
+          progress.appendChild(marker);
+
+          state.fragments.push({
+            index,
+            text: item.text,
+            x: item.x,
+            y: item.y,
+            align: item.align,
+            element,
+            characters,
+            marker,
+            hold: 0,
+            visibility: 0,
+            complete: false,
+            rect: null
+          });
+        });
+      }
+
+      function createStars() {
+        const random = seededRandom(2917);
+        const count = reducedMotion
+          ? Math.round((state.width * state.height) / 14000)
+          : Math.round((state.width * state.height) / 6000);
+        const safeCount = clamp(count, 80, 320);
+
+        state.stars = Array.from({ length: safeCount }, (_, index) => {
+          const warm = random() > 0.88;
+          return {
+            x: random(),
+            y: random(),
+            radius: warm ? 0.7 + random() * 0.9 : 0.35 + random() * 0.9,
+            base: 0.08 + random() * 0.36,
+            phase: random() * Math.PI * 2,
+            speed: 0.00024 + random() * 0.00075,
+            warm,
+            drift: index % 11 === 0 ? 0.05 + random() * 0.06 : 0
+          };
+        });
+      }
+
+      function resize() {
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.width = Math.round(state.width * state.dpr);
+        canvas.height = Math.round(state.height * state.dpr);
+        canvas.style.width = `${state.width}px`;
+        canvas.style.height = `${state.height}px`;
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+        createStars();
+        layoutFragments();
+      }
+
+      function layoutFragments() {
+        const isMobile = state.width < 720;
+        state.fragments.forEach((fragment, index) => {
+          const layout = isMobile ? mobileLayout[index] : LETTER.fragments[index];
+          fragment.element.dataset.align = layout.align;
+          fragment.element.style.left = `${layout.x}%`;
+          fragment.element.style.top = `${layout.y}%`;
+        });
+
+        requestAnimationFrame(() => {
+          state.fragments.forEach((fragment) => {
+            const rect = fragment.element.getBoundingClientRect();
+            fragment.rect = {
+              left: rect.left,
+              right: rect.right,
+              top: rect.top,
+              bottom: rect.bottom,
+              x: rect.left + rect.width / 2,
+              y: rect.top + rect.height / 2
+            };
+          });
+          state.dimensionsReady = true;
+        });
+      }
+
+      function distanceToRect(point, rect) {
+        if (!rect) return 9999;
+        const dx = Math.max(rect.left - point.x, 0, point.x - rect.right);
+        const dy = Math.max(rect.top - point.y, 0, point.y - rect.bottom);
+        return Math.hypot(dx, dy);
+      }
+
+      function setPointer(x, y) {
+        state.pointer.x = clamp(x, 0, state.width);
+        state.pointer.y = clamp(y, 0, state.height);
+      }
+
+      function updateFragment(fragment, dt) {
+        if (!fragment.complete && fragment.index > state.completeCount) {
+          fragment.hold = 0;
+          fragment.visibility = 0;
+          fragment.element.style.opacity = "0";
+          fragment.element.style.filter = "blur(6.5px)";
+
+          fragment.characters.forEach((character) => {
+            if (!character.lit) return;
+            character.lit = false;
+            character.element.classList.remove("lit", "comet");
+          });
+          return;
+        }
+
+        const distance = distanceToRect(state.light, fragment.rect);
+        const readRadius = state.width < 720 ? 108 : 132;
+        const proximity = clamp(1 - distance / readRadius, 0, 1);
+
+        if (!fragment.complete && proximity > 0.025) {
+          fragment.hold = clamp(
+            fragment.hold + dt * (0.5 + proximity * 1.38),
+            0,
+            1
+          );
+        } else if (!fragment.complete) {
+          fragment.hold = clamp(fragment.hold - dt * 0.11, 0, 1);
+        }
+
+        fragment.characters.forEach((character) => {
+          const shouldBeLit = fragment.complete || fragment.hold >= character.threshold;
+          if (shouldBeLit && !character.lit) {
+            character.lit = true;
+            character.element.classList.add("lit");
+            if (!fragment.complete && proximity > 0.2 && !reducedMotion) {
+              character.element.classList.add("comet");
+            }
+          } else if (!shouldBeLit && character.lit) {
+            character.lit = false;
+            character.element.classList.remove("lit", "comet");
+          }
+        });
+
+        if (!fragment.complete && fragment.hold >= 1) {
+          completeFragment(fragment);
+        }
+
+        const visibility = fragment.complete
+          ? 0.24 + proximity * 0.7
+          : Math.max(fragment.hold * 0.18, proximity * 0.94);
+        const blur = fragment.complete
+          ? (1 - proximity) * 2.8
+          : (1 - visibility) * 6.5;
+
+        fragment.visibility = clamp(visibility, 0, 1);
+        fragment.element.style.opacity = fragment.visibility.toFixed(3);
+        fragment.element.style.filter = `blur(${blur.toFixed(2)}px)`;
+      }
+
+      function completeFragment(fragment) {
+        if (fragment.complete || fragment.index !== state.completeCount) return;
+        fragment.complete = true;
+        fragment.hold = 1;
+        fragment.marker.classList.add("lit");
+        state.completeCount += 1;
+        status.textContent = fragment.text;
+
+        fragment.characters.forEach((character) => {
+          character.lit = true;
+          character.element.classList.add("lit");
+        });
+
+        if (state.completeCount === state.fragments.length) {
+          window.setTimeout(openFinale, reducedMotion ? 120 : 850);
+        }
+      }
+
+      function openFinale() {
+        if (state.finalOpen) return;
+        state.finalOpen = true;
+        app.classList.add("finale-open");
+        finale.classList.add("visible");
+        finale.setAttribute("aria-hidden", "false");
+        revealStar.focus({ preventScroll: true });
+      }
+
+      function drawStars(time) {
+        ctx.clearRect(0, 0, state.width, state.height);
+
+        state.stars.forEach((star) => {
+          const drift = star.drift
+            ? Math.sin(time * 0.00008 + star.phase) * star.drift
+            : 0;
+          const twinkle = reducedMotion
+            ? 1
+            : 0.68 + Math.sin(time * star.speed + star.phase) * 0.32;
+          const alpha = star.base * twinkle;
+
+          ctx.beginPath();
+          ctx.arc(
+            star.x * state.width + drift,
+            star.y * state.height,
+            star.radius,
+            0,
+            Math.PI * 2
+          );
+          ctx.fillStyle = star.warm
+            ? `rgba(255, 236, 181, ${alpha})`
+            : `rgba(210, 222, 255, ${alpha})`;
+          ctx.fill();
+
+          if (star.radius > 1.15 && alpha > 0.26) {
+            ctx.beginPath();
+            ctx.moveTo(star.x * state.width - 5, star.y * state.height);
+            ctx.lineTo(star.x * state.width + 5, star.y * state.height);
+            ctx.moveTo(star.x * state.width, star.y * state.height - 5);
+            ctx.lineTo(star.x * state.width, star.y * state.height + 5);
+            ctx.strokeStyle = `rgba(219, 230, 255, ${alpha * 0.25})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        });
+      }
+
+      function drawConstellation() {
+        if (!state.dimensionsReady) return;
+
+        for (let index = 1; index < state.fragments.length; index += 1) {
+          const previous = state.fragments[index - 1];
+          const current = state.fragments[index];
+          if (!previous.complete || !current.complete || !previous.rect || !current.rect) {
+            continue;
+          }
+
+          const lineGradient = ctx.createLinearGradient(
+            previous.rect.x,
+            previous.rect.y,
+            current.rect.x,
+            current.rect.y
+          );
+          lineGradient.addColorStop(0, "rgba(255, 237, 184, 0.22)");
+          lineGradient.addColorStop(0.5, "rgba(199, 216, 255, 0.12)");
+          lineGradient.addColorStop(1, "rgba(255, 237, 184, 0.2)");
+
+          ctx.beginPath();
+          ctx.moveTo(previous.rect.x, previous.rect.y);
+          ctx.lineTo(current.rect.x, current.rect.y);
+          ctx.strokeStyle = lineGradient;
+          ctx.lineWidth = state.finalOpen ? 0.9 : 0.65;
+          ctx.stroke();
+        }
+      }
+
+      function drawGuide() {
+        if (!state.started || state.finalOpen || !state.dimensionsReady) return;
+
+        let nearest = null;
+        let nearestDistance = Infinity;
+        state.fragments.forEach((fragment) => {
+          if (fragment.complete || fragment.index !== state.completeCount) return;
+          const distance = distanceToRect(state.light, fragment.rect);
+          if (distance < nearestDistance) {
+            nearest = fragment;
+            nearestDistance = distance;
+          }
+        });
+
+        if (!nearest || nearestDistance > 380) return;
+
+        const alpha = clamp(1 - nearestDistance / 380, 0, 1) * 0.16;
+        const targetX = clamp(state.light.x, nearest.rect.left, nearest.rect.right);
+        const targetY = clamp(state.light.y, nearest.rect.top, nearest.rect.bottom);
+
+        ctx.beginPath();
+        ctx.moveTo(state.light.x, state.light.y);
+        ctx.lineTo(targetX, targetY);
+        ctx.setLineDash([2, 8]);
+        ctx.lineDashOffset = -performance.now() * 0.012;
+        ctx.strokeStyle = `rgba(211, 224, 255, ${alpha})`;
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function frame(time) {
+        const dt = Math.min((time - state.lastTime) / 1000, 0.05);
+        state.lastTime = time;
+
+        const follow = state.pointer.x > 0 && state.pointer.y > 0 ? 0.2 : 0.08;
+        state.light.x = lerp(state.light.x, state.pointer.x, follow);
+        state.light.y = lerp(state.light.y, state.pointer.y, follow);
+
+        beam.style.transform = `translate3d(${state.light.x}px, ${state.light.y}px, 0)`;
+
+        if (state.started && !state.finalOpen) {
+          state.fragments.forEach((fragment) => updateFragment(fragment, dt));
+        }
+
+        drawStars(time);
+        drawConstellation();
+        drawGuide();
+
+        requestAnimationFrame(frame);
+      }
+
+      function startExperience() {
+        if (state.started) return;
+        state.started = true;
+        opening.classList.add("leave");
+        app.classList.add("started");
+        window.setTimeout(() => {
+          opening.setAttribute("aria-hidden", "true");
+          opening.style.display = "none";
+        }, reducedMotion ? 20 : 1150);
+
+        const firstRect = state.fragments[0].rect;
+        if (firstRect) {
+          setPointer(firstRect.x, firstRect.y);
+          state.light.x = firstRect.x - state.width * 0.13;
+          state.light.y = firstRect.y + state.height * 0.07;
+        }
+
+        app.focus({ preventScroll: true });
+      }
+
+      function renderAnswer() {
+        const endings = LETTER.endings;
+        const ending = endings[Math.floor(Math.random() * endings.length)];
+        answerCopy.replaceChildren();
+
+        ending.forEach((line, lineIndex) => {
+          const paragraph = document.createElement("p");
+          Array.from(line).forEach((character, characterIndex) => {
+            const span = document.createElement("span");
+            span.className = "answer-char";
+            span.textContent = character;
+            span.style.opacity = "0";
+            span.style.display = "inline-block";
+            span.style.animation = reducedMotion
+              ? "none"
+              : "char-arrive 520ms ease both";
+            span.style.animationDelay = `${lineIndex * 420 + characterIndex * 38}ms`;
+            paragraph.appendChild(span);
+          });
+          answerCopy.appendChild(paragraph);
+        });
+
+        signature.textContent = LETTER.signature;
+      }
+
+      function revealEnding() {
+        if (state.answerShown) return;
+        state.answerShown = true;
+        renderAnswer();
+        finale.classList.add("reveal-started");
+
+        window.setTimeout(() => {
+          finale.classList.add("revealed");
+          status.textContent = answerCopy.textContent;
+        }, reducedMotion ? 20 : 760);
+      }
+
+      function bindEvents() {
+        enter.addEventListener("click", startExperience);
+        revealStar.addEventListener("click", revealEnding);
+        replay.addEventListener("click", () => window.location.reload());
+
+        window.addEventListener("pointermove", (event) => {
+          if (!state.started) return;
+          setPointer(event.clientX, event.clientY);
+        }, { passive: true });
+
+        window.addEventListener("pointerdown", (event) => {
+          if (!state.started || event.target.closest("button")) return;
+          setPointer(event.clientX, event.clientY);
+        }, { passive: true });
+
+        window.addEventListener("keydown", (event) => {
+          if (!state.started || state.finalOpen) return;
+          const step = event.shiftKey ? 72 : 36;
+          const keyMap = {
+            ArrowLeft: [-step, 0],
+            ArrowRight: [step, 0],
+            ArrowUp: [0, -step],
+            ArrowDown: [0, step]
+          };
+
+          if (!keyMap[event.key]) return;
+          event.preventDefault();
+          setPointer(
+            state.pointer.x + keyMap[event.key][0],
+            state.pointer.y + keyMap[event.key][1]
+          );
+        });
+
+        window.addEventListener("resize", resize, { passive: true });
+        document.addEventListener("visibilitychange", () => {
+          state.lastTime = performance.now();
+        });
+      }
+
+      buildFragments();
+      bindEvents();
+      resize();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
