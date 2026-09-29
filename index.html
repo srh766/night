@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#05060c">
   <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="夜信">
+  <meta name="format-detection" content="telephone=no">
   <title>藏在夜色里的信</title>
   <style>
     :root {
@@ -28,8 +33,10 @@
     body {
       width: 100%;
       height: 100%;
+      height: 100dvh;
       margin: 0;
       overflow: hidden;
+      overscroll-behavior: none;
       background: var(--night);
     }
 
@@ -37,20 +44,27 @@
       color: #fff;
       font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", serif;
       -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      -webkit-touch-callout: none;
       text-rendering: optimizeLegibility;
     }
 
     button {
       font: inherit;
+      touch-action: manipulation;
     }
 
     #app {
       position: fixed;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
       isolation: isolate;
       overflow: hidden;
       touch-action: none;
       user-select: none;
+      -webkit-user-select: none;
       background:
         radial-gradient(circle at 50% 112%, rgba(21, 27, 48, 0.42), transparent 42%),
         linear-gradient(180deg, #04050a 0%, var(--night) 52%, #070914 100%);
@@ -279,6 +293,11 @@
       color: rgba(235, 239, 251, 0.66);
       font-size: clamp(0.95rem, 1.5vw, 1.08rem);
       line-height: 1.9;
+    }
+
+    .mobile-copy,
+    .mobile-label {
+      display: none;
     }
 
     .enter {
@@ -578,44 +597,154 @@
       }
     }
 
+    .touch-ui .desktop-copy,
+    .touch-ui .desktop-label {
+      display: none;
+    }
+
+    .touch-ui .mobile-copy,
+    .touch-ui .mobile-label {
+      display: inline;
+    }
+
+    .touch-ui .enter {
+      display: inline-flex;
+      min-width: 9.5rem;
+      min-height: 3rem;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 0.6rem;
+    }
+
+    .touch-ui .star-button {
+      width: 96px;
+      height: 96px;
+    }
+
+    .touch-ui .star-shape {
+      width: 40px;
+      height: 40px;
+    }
+
+    .touch-ui .replay {
+      min-width: 6rem;
+      min-height: 2.75rem;
+      padding: 0.7rem 0.5rem;
+    }
+
+    .mobile-ui .fragment {
+      max-width: min(54vw, 15rem);
+      font-size: clamp(0.94rem, 4.2vw, 1.16rem);
+      line-height: 1.64;
+    }
+
+    .mobile-ui .progress {
+      gap: 7px;
+    }
+
+    .mobile-ui .progress li {
+      width: 5px;
+      height: 5px;
+    }
+
+    .mobile-ui .hud {
+      top: calc(var(--safe-top) + 6px);
+      right: 0;
+      bottom: auto;
+      left: 0;
+    }
+
+    .mobile-ui .opening {
+      padding:
+        calc(var(--safe-top) + 20px)
+        calc(var(--safe-right) + 18px)
+        calc(var(--safe-bottom) + 20px)
+        calc(var(--safe-left) + 18px);
+    }
+
+    .mobile-ui .opening-copy {
+      max-width: 18rem;
+      margin-top: 1.2rem;
+      font-size: 0.96rem;
+      line-height: 1.8;
+    }
+
+    .mobile-ui h1 {
+      font-size: clamp(1.9rem, 8.6vw, 2.65rem);
+    }
+
+    .mobile-ui .finale-inner {
+      min-height: min(19rem, 62vh);
+      padding-bottom: 3.4rem;
+    }
+
+    .mobile-ui .finale-prompt {
+      max-width: 17rem;
+      margin-top: 1.05rem;
+      font-size: 0.92rem;
+    }
+
+    .mobile-ui .answer-inner {
+      padding: 0 0.25rem 2.8rem;
+    }
+
+    .mobile-ui .answer p {
+      font-size: clamp(1.2rem, 5.8vw, 1.68rem);
+      line-height: 1.7;
+    }
+
+    .mobile-ui .answer .signature {
+      margin-top: 1.4rem;
+    }
+
     @media (max-width: 719px) {
-      .fragment {
-        max-width: 47vw;
-        font-size: clamp(0.96rem, 4.15vw, 1.2rem);
-        line-height: 1.72;
+      html,
+      body,
+      #app,
+      .opening,
+      .opening-inner,
+      .finale,
+      .finale-inner {
+        max-width: 100%;
+        overflow-x: clip;
       }
 
-      .hud {
-        top: calc(var(--safe-top) + 4px);
-        bottom: auto;
+      body {
+        font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
       }
 
-      .progress {
-        gap: 7px;
+      h1 {
+        max-width: 100%;
+        font-size: clamp(1.72rem, 8.4vw, 2.5rem);
+        line-height: 1.24;
+        word-break: break-all;
+        overflow-wrap: anywhere;
       }
 
-      .progress li {
-        width: 5px;
-        height: 5px;
+      .opening-inner {
+        width: 100%;
+        max-width: 100%;
       }
 
       .opening-copy {
-        max-width: 20rem;
+        width: 100%;
+        max-width: min(20rem, 86vw);
+        margin-right: auto;
+        margin-left: auto;
+        font-size: clamp(0.88rem, 4.1vw, 1rem);
+        line-height: 1.78;
       }
 
-      .finale-inner {
-        min-height: 19rem;
-      }
-
-      .answer p {
-        font-size: clamp(1.25rem, 6vw, 1.75rem);
+      .finale-prompt {
+        max-width: min(18rem, 88vw);
       }
     }
 
-    @media (max-height: 580px) {
+    @media (max-height: 580px) and (orientation: landscape) {
       .fragment {
-        max-width: 34vw;
+        max-width: min(36vw, 20rem);
         font-size: clamp(0.9rem, 2.45vw, 1.1rem);
+        line-height: 1.55;
       }
 
       .opening-copy {
@@ -628,6 +757,20 @@
 
       .finale-inner {
         min-height: 15rem;
+        padding-bottom: 2.5rem;
+      }
+    }
+
+    @media (max-width: 719px) and (max-height: 650px) {
+      .mobile-ui .fragment {
+        max-width: min(58vw, 13.5rem);
+        font-size: clamp(0.82rem, 3.85vw, 0.98rem);
+        line-height: 1.5;
+      }
+
+      .mobile-ui .progress li {
+        width: 4px;
+        height: 4px;
       }
     }
 
@@ -659,8 +802,14 @@
       <div class="opening-inner">
         <p class="eyebrow">一封要在夜里寻找的信</p>
         <h1>藏在夜色里的信</h1>
-        <p class="opening-copy">把光慢慢移过夜色，句子会自己醒来。</p>
-        <button class="enter" id="enter" type="button">让灯亮起来</button>
+        <p class="opening-copy">
+          <span class="desktop-copy">把光慢慢移过夜色，句子会自己醒来。</span>
+          <span class="mobile-copy">用指尖慢慢划过夜色，句子会自己醒来。</span>
+        </p>
+        <button class="enter" id="enter" type="button">
+          <span class="desktop-label">让灯亮起来</span>
+          <span class="mobile-label">点亮夜色</span>
+        </button>
       </div>
     </section>
 
@@ -669,7 +818,10 @@
         <button class="star-button" id="reveal-star" type="button" aria-label="点亮最后一颗星">
           <span class="star-shape" aria-hidden="true"></span>
         </button>
-        <p class="finale-prompt">所有句子都亮了。还有一颗星，等你。</p>
+        <p class="finale-prompt">
+          <span class="desktop-copy">所有句子都亮了。还有一颗星，等你。</span>
+          <span class="mobile-copy">所有句子都亮了。点一下，这颗星在等你。</span>
+        </p>
 
         <div class="answer" id="answer" aria-live="polite">
           <div class="answer-inner">
@@ -733,9 +885,12 @@
       const replay = document.getElementById("replay");
       const status = document.getElementById("status");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const touchDevice = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+      let touchActive = false;
+      let viewportFrame = 0;
 
       const mobileLayout = [
-        { x: 4, y: 8, align: "left" },
+        { x: 4, y: 13, align: "left" },
         { x: 96, y: 17, align: "right" },
         { x: 96, y: 26, align: "right" },
         { x: 4, y: 35, align: "left" },
@@ -745,6 +900,19 @@
         { x: 4, y: 71, align: "left" },
         { x: 4, y: 80, align: "left" },
         { x: 96, y: 89, align: "right" }
+      ];
+
+      const mobileShortLayout = [
+        { x: 4, y: 13, align: "left" },
+        { x: 96, y: 16, align: "right" },
+        { x: 96, y: 25, align: "right" },
+        { x: 4, y: 34, align: "left" },
+        { x: 4, y: 43, align: "left" },
+        { x: 96, y: 52, align: "right" },
+        { x: 96, y: 61, align: "right" },
+        { x: 4, y: 70, align: "left" },
+        { x: 4, y: 79, align: "left" },
+        { x: 96, y: 88, align: "right" }
       ];
 
       const state = {
@@ -845,7 +1013,7 @@
 
       function resize() {
         state.width = window.innerWidth;
-        state.height = window.innerHeight;
+        state.height = Math.max(window.innerHeight, state.width / 2.35);
         state.dpr = Math.min(window.devicePixelRatio || 1, 2);
 
         canvas.width = Math.round(state.width * state.dpr);
@@ -860,8 +1028,13 @@
 
       function layoutFragments() {
         const isMobile = state.width < 720;
+        const isShortMobile = isMobile && state.height < 680;
         state.fragments.forEach((fragment, index) => {
-          const layout = isMobile ? mobileLayout[index] : LETTER.fragments[index];
+          const layout = isShortMobile
+            ? mobileShortLayout[index]
+            : isMobile
+              ? mobileLayout[index]
+              : LETTER.fragments[index];
           fragment.element.dataset.align = layout.align;
           fragment.element.style.left = `${layout.x}%`;
           fragment.element.style.top = `${layout.y}%`;
@@ -911,7 +1084,9 @@
         }
 
         const distance = distanceToRect(state.light, fragment.rect);
-        const readRadius = state.width < 720 ? 108 : 132;
+        const readRadius = touchDevice
+          ? clamp(Math.min(state.width, state.height) * 0.33, 142, 196)
+          : 132;
         const proximity = clamp(1 - distance / readRadius, 0, 1);
 
         if (!fragment.complete && proximity > 0.025) {
@@ -1112,9 +1287,16 @@
 
         const firstRect = state.fragments[0].rect;
         if (firstRect) {
-          setPointer(firstRect.x, firstRect.y);
-          state.light.x = firstRect.x - state.width * 0.13;
-          state.light.y = firstRect.y + state.height * 0.07;
+          if (touchDevice) {
+            state.pointer.x = state.width * 0.5;
+            state.pointer.y = state.height * 0.5;
+            state.light.x = state.width * 0.5;
+            state.light.y = state.height * 0.5;
+          } else {
+            setPointer(firstRect.x, firstRect.y);
+            state.light.x = firstRect.x - state.width * 0.13;
+            state.light.y = firstRect.y + state.height * 0.07;
+          }
         }
 
         app.focus({ preventScroll: true });
@@ -1158,18 +1340,56 @@
       }
 
       function bindEvents() {
+        document.documentElement.classList.toggle("touch-ui", touchDevice);
+        document.documentElement.classList.toggle("mobile-ui", state.width < 720);
+
         enter.addEventListener("click", startExperience);
         revealStar.addEventListener("click", revealEnding);
         replay.addEventListener("click", () => window.location.reload());
 
         window.addEventListener("pointermove", (event) => {
           if (!state.started) return;
+          if (event.pointerType === "touch" && !touchActive) return;
           setPointer(event.clientX, event.clientY);
         }, { passive: true });
 
         window.addEventListener("pointerdown", (event) => {
-          if (!state.started || event.target.closest("button")) return;
+          if (!state.started) return;
+          if (event.target.closest("button")) return;
+          if (event.pointerType === "touch") {
+            touchActive = true;
+          }
           setPointer(event.clientX, event.clientY);
+        }, { passive: true });
+
+        window.addEventListener("touchstart", (event) => {
+          if (!state.started || state.finalOpen) return;
+          if (event.target.closest("button")) return;
+          const touch = event.touches[0];
+          if (!touch) return;
+          touchActive = true;
+          setPointer(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        window.addEventListener("touchmove", (event) => {
+          if (!state.started || state.finalOpen) return;
+          const touch = event.touches[0];
+          if (!touch) return;
+          setPointer(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        window.addEventListener("touchend", () => {
+          touchActive = false;
+        }, { passive: true });
+
+        window.addEventListener("pointerup", (event) => {
+          if (event.pointerType === "touch") {
+            touchActive = false;
+          }
+        }, { passive: true });
+
+        window.addEventListener("pointercancel", () => {
+          touchActive = false;
         }, { passive: true });
 
         window.addEventListener("keydown", (event) => {
@@ -1190,7 +1410,19 @@
           );
         });
 
-        window.addEventListener("resize", resize, { passive: true });
+        const scheduleResize = () => {
+          window.cancelAnimationFrame(viewportFrame);
+          viewportFrame = window.requestAnimationFrame(() => {
+            resize();
+            document.documentElement.classList.toggle("mobile-ui", state.width < 720);
+          });
+        };
+
+        window.addEventListener("resize", scheduleResize, { passive: true });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", scheduleResize, { passive: true });
+        }
+        window.addEventListener("orientationchange", scheduleResize, { passive: true });
         document.addEventListener("visibilitychange", () => {
           state.lastTime = performance.now();
         });
